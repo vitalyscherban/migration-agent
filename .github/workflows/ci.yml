@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Test
+        run: python -m pytest tests/ -q
+
+      # The benchmarks are part of the contract, not decoration. They run a
+      # real pipeline against a deterministic corpus with an offline model, so
+      # a regression in token accounting or clustering fails CI rather than
+      # quietly making the README wrong.
+      - name: Benchmark (naive vs optimised)
+        run: python benchmarks/compare.py
+
+      - name: Benchmark (lever ablation)
+        run: python benchmarks/ablation.py
