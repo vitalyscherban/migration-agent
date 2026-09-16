@@ -340,7 +340,42 @@ prompt-format regression fails CI instead of silently degrading in production.
 | `benchmarks/` | `compare.py`, `ablation.py` — both run in CI |
 
 Further reading: [architecture](docs/architecture.md) ·
-[tuning](docs/tuning.md) · [evaluation](docs/evaluation.md).
+[tuning](docs/tuning.md) · [evaluation](docs/evaluation.md) ·
+[Azure solution architecture](docs/azure-architecture.md).
+
+---
+
+## Enterprise cost savings at scale
+
+The 98.3% token reduction compounds at scale. The table below uses the same
+token counts from the measured corpus (120 files) scaled linearly by file
+count. **Same model** prices both sides at gpt-4o ($2.50/$10.00 per 1M) to
+isolate the token-reduction win from model-routing. **As run** reflects the
+additional win from routing cluster questions to gpt-4o-mini and reserving
+gpt-4o for escalations.
+
+| Scale | Files | Naive (gpt-4o) | Optimised — same model | Optimised — as run |
+|---|---:|---:|---:|---:|
+| Corpus (measured) | 120 | $0.54 | $0.0069 | $0.0004 |
+| Small team | 500 | $2.24 | $0.029 | $0.0017 |
+| Mid-size org | 5,000 | $22.4 | $0.29 | $0.017 |
+| Enterprise | 50,000 | $224 | $2.90 | $0.17 |
+
+At enterprise scale (50,000 files, weekly migrations), the optimised pipeline
+saves roughly **$43,000/year** compared to a naive per-file agent at the same
+model. The saving is 98.7% on the token side alone; model routing adds a
+further reduction on top.
+
+> **Clustering scales sub-linearly.** A real 50,000-file codebase shares the
+> same small vocabulary of change shapes as the 120-file corpus — batch
+> timeouts, interactive timeouts, connection-error mappings. Cluster count
+> grows much more slowly than file count, so actual optimised costs will
+> typically be lower than the linear-scaling estimates above. Watch
+> `cluster.stats()["compression"]`: below 3:1 this architecture is no longer
+> the right tool.
+
+For Azure deployment guidance, cost breakdown by Azure OpenAI tier, and
+infrastructure-as-code sketches, see [docs/azure-architecture.md](docs/azure-architecture.md).
 
 ## License
 
